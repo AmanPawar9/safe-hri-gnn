@@ -1,0 +1,60 @@
+# System Configuration Parameters
+
+perception:
+  camera_frame: "camera_link"
+  skeleton_topic: "/body_tracking_data"
+  filter_noise_variance: 0.01
+  input_seq_len: 30
+  fps: 30.0
+  
+  # Kalman filter parameters
+  kalman:
+    process_variance: 1e-4
+    measurement_variance: 1e-2
+    dt: 0.033  # 1/30 seconds
+
+prediction:
+  model_path: "models/stgnn_model.pth"
+  prediction_horizon: 45  # frames (1.5s @ 30fps)
+  confidence_threshold: 0.8
+  batch_size: 1
+  device: "cuda"  # or "cpu"
+  
+  # Model architecture parameters
+  model:
+    num_joints: 34
+    input_features: 3
+    output_features: 3
+    hidden_dim: 128
+    num_st_blocks: 3
+
+planning:
+  safety_distance: 0.3  # meters
+  planning_timeout: 0.06  # seconds
+  replan_frequency: 20  # Hz
+  collision_check_resolution: 0.01
+  
+  # Body parts for collision modeling
+  body_parts:
+    torso:
+      joints: [0, 1, 2, 13, 10]
+      radius: 0.15
+    left_upper_arm:
+      joints: [4, 5]
+      radius: 0.06
+    left_forearm:
+      joints: [5, 6]
+      radius: 0.05
+    right_upper_arm:
+      joints: [7, 8]
+      radius: 0.06
+    right_forearm:
+      joints: [8, 9]
+      radius: 0.05
+
+# Logging configuration
+logging:
+  level: "INFO"
+  enable_profiling: false
+  log_predictions: false
+  log_planning: true

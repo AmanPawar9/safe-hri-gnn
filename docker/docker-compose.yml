@@ -1,0 +1,62 @@
+version: '3.8'
+services:
+  hrc_system:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: predictive-hrc:latest
+    container_name: hrc_system_container
+    stdin_open: true
+    tty: true
+    volumes:
+      - ../:/ros2_ws # Mount the entire repo into the container for live code changes
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw # For GUI applications
+    environment:
+      - DISPLAY=${DISPLAY}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - QT_X11_NO_MITSHM=1 # Fix for Qt applications
+      - XAUTHORITY=/tmp/.docker.xauth
+    network_mode: "host" # Easiest way to get GUI apps (like Rviz2) and ROS discovery working
+    privileged: true # Needed for accessing devices like cameras
+    devices:
+      - /dev/dri:/dev/dri # For hardware acceleration
+    command: >
+      bash -c "
+      source /opt/ros/humble/setup.bash &&
+      cd /ros2_ws &&
+      colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release &&
+      source install/setup.bash &&
+      echo 'Workspace built successfully!' &&
+      echo 'Available launch commands:' &&
+      echo '  ros2 launch robot_control system.launch.py' &&
+      echo '  ros2 run perception data_processing_node' &&
+      echo '  ros2 run prediction_model predict_node' &&
+      bash
+      "
+  
+  # Optional: Separate service for development/testing
+  hrc_dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: predictive-hrc:latest
+    container_name: hrc_dev_container
+    stdin_open: true
+    tty: true
+    volumes:
+      - ../:/ros2_ws
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+    network_mode: "host"
+    privileged: true
+    profiles: ["dev"] # Use with: docker-compose --profile dev up
+    command: >
+      bash -c "
+      source /opt/ros/humble/setup.bash &&
+      cd /ros2_ws &&
+      echo 'Development container ready. Use this for testing individual nodes.' &&
+      bash
+      "
